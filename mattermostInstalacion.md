@@ -24,7 +24,7 @@ prueba
         Ejemplo: DOMAIN=192.179.8.5
     - Añade tu usuario al grupo docker:
         sudo groupadd docker
-        sudo usermod -aG docker $USER
+        sudo usermod -aG docker $USER (mhadmin)
         newgrp docker  # O cierra y abre la terminal
         sudo reboot
     - Asignar el socket al grupo docker:
@@ -43,10 +43,13 @@ prueba
         - Si no muestra docker en los permisos puedes ajustar los permisos con:
         sudo chown root:docker /var/run/docker.sock
     - Comprobar la instalación de los contenedores de mattermost y de postgres:
-        -Dentro de docker: escribir ls -l
+        -Dentro de docker: escribir docker ps
 ## Si aparece en el contenedor de postgres Restarting
     - Correr los siguientes comandos:
-        docker inspect docker-postgres-1
+        docker inspect docker_postgres_1
+        para mattermost:
+        docker inspect docker_mattermost_1
+        docker logs docker_mattermost_1
 **Si en postgres aparece "ReadonlyRootfs": true**
     - Edita el archivo docker-compose.yml
         nano /home/usuario/docker/docker-compose.yml
@@ -58,7 +61,7 @@ prueba
         docker-compose up -d
     - Verifica el estado de los contenedores:
         docker ps
-        - Usa docker logs docker-postgres-1 para revisar los logs y obtener más información si el contenedor de postgres sigue diciendo restarting
+        - Usa docker logs docker_postgres_1 para revisar los logs y obtener más información si el contenedor de postgres sigue diciendo restarting
 **Si aparece en el contenedor de mattermost Restarting**
     - Puede deberse a problemas de permiso en los volumenes montados, se puede arreglar dando permisos con el siguiente comando: sudo chown -R 2000:2000 /home/mhadmin/mattermost/volumes/app/ 
 
@@ -150,6 +153,12 @@ prueba
             -v /home/mhadmin/backups_mattermost:/backup \
             alpine sh -c "rm -rf /data/* && tar xzvf /backup/db_postgres_data_backup_2025-04-21.tar.gz -C /data --strip-components=1"
 
+        - Ejemplo
+            docker run --rm \
+            -v db_postgres_data:/data \
+            -v /home/mhadmin/backups_mattermost:/backup \
+            alpine sh -c "rm -rf /data/* && tar xzvf /backup/db_postgres_data_backup_2025-05-07.tar.gz -C /data --strip-components=1"
+
 ## Crear un respaldo automatizado mediante cron ##
     - Crear un script para el comando
         sudo mkdir -p /opt/backup-scripts
@@ -233,6 +242,12 @@ prueba
             -v db_postgres_data:/data \
             -v /home/mhadmin/backups_mattermost:/backup \
             alpine sh -c "rm -rf /data/* && tar xzvf /backup/db_postgres_data_backup_$(date +\%Y-\%m-\%d).tar.gz -C /data --strip-components=1"
+
+        - Ejemplo
+            docker run --rm \
+            -v db_postgres_data:/data \
+            -v /home/mhadmin/backups_mattermost:/backup \
+            alpine sh -c "rm -rf /data/* && tar xzvf /backup/db_postgres_data_backup_2025-05-07.tar.gz -C /data --strip-components=1"
     - Hacerlo ejecutable
         sudo chmod +x /opt/backup-scripts/restore_mattermost.sh
     - Editar el cron
@@ -363,6 +378,28 @@ prueba
         Support Email Address:          cgnova.kitsu@gmail.com
         Notification Reply-To Address:  cgnova.kitsu@gmail.com
 
+## comprobar que datasource tenga los mismos valores que el archivo .env ##
+Ejemplo de valores que no coinciden:
+en config.json
+"SqlSettings": {
+        "DriverName": "postgres",
+        "DataSource": "postgres://mmuser:mostest@localhost/mattermost_test?sslmode=disable\u0026connect_timeout=10\u0026binary_parameters=yes",
+
+        usuario:mmuser
+        contraseña:mostest
+        nombre de la base de datos:mattermost_test
+        servicio y puerto:localhost
+
+en env.magicchat
+usuario:mmuser
+contraseña:mmuser_password
+DB:mattermost
+servicio y puerto:postgres:5432
+
+Los valores de .env deben ser los que se usen config.json
+Ejemplo de como debe estar según el .env del ejemplo anterior
+"SqlSettings": {
+  "DataSource": "postgres://mmuser:mmuser_password@postgres:5432/mattermost?sslmode=disable&connect_timeout=10\u0026binary_parameters=yes",
 
 
         
