@@ -401,5 +401,185 @@ Ejemplo de como debe estar según el .env del ejemplo anterior
 "SqlSettings": {
   "DataSource": "postgres://mmuser:mmuser_password@postgres:5432/mattermost?sslmode=disable&connect_timeout=10\u0026binary_parameters=yes",
 
+## Si el contenedor de docker muestra "Restarting" y la contraseña para conectarse a postgres es incorrecta ##
+Es probable que las credenciales del usuario con el que mattermost entraba a postgres se hayan eliminado
+- Comprueba que la contraseña puesta en el env.magicchat sea correcto
+    docker inspect <nombre_contenedor_mattermost> | grep -A 10 "POSTGRES_PASSWORD"
+- Ingresar a postgres con el usuario que esta en env.magicchat
+    docker exec -it docker_postgres_1 psql -U mmuser -d mattermost -c "\du"
+- Remplaza Cambia la contraseña del usuario con la que sale en env.magicchat
+    ALTER USER mmuser WITH PASSWORD 'nueva_contraseña';
+Reinicia los servicios
+    docker-compose down && docker-compose up -d
 
-        
+## Actualización de instrucciones para realizar un Restore de data (manual) ##
+- Crear un directorio temporal en el que se pondrá el backup descomprimido
+    mkdir -p TEMPORAL_DIR_PARA_RESTAURACION
+- Descomprimir el backup
+    #!/bin/bash
+
+    - Definición de rutas
+    BACKUP_FILE="/ruta/al/backup/db_postgres_data_backup_2025-05-07.tar.gz"
+    TEMPORAL_DIR="/ruta/al/directorio/temporal/TEMPORAL_DIR_PARA_RESTAURACION"
+
+    1. Crear directorio temporal (si no existe)
+    echo "Creando directorio temporal..."
+    mkdir -p "$TEMPORAL_DIR"
+
+    2. Descomprimir el backup en el directorio temporal
+    echo "Descomprimiendo el respaldo..."
+    tar -xzf "$BACKUP_FILE" -C "$TEMPORAL_DIR"
+
+    3. Verificar contenido
+    echo "Contenido descomprimido:"
+    ls -l "$TEMPORAL_DIR"
+
+    echo "Descompresión completada en $TEMPORAL_DIR"
+
+    # Ejemplo #
+    #!/bin/bash
+
+    - Definición de rutas
+    BACKUP_FILE="/home/mhadmin/backups_mattermost/db_postgres_data_backup_2025-05-07.tar.gz"
+    TEMPORAL_DIR="/home/mhadmin/TEMPORAL_DIR_PARA_RESTAURACION"
+
+    - Crear directorio temporal (si no existe)
+    echo "Creando directorio temporal..."
+    mkdir -p "$TEMPORAL_DIR"
+
+    - Descomprimir el backup en el directorio temporal
+    echo "Descomprimiendo el respaldo..."
+    tar -xzf "$BACKUP_FILE" -C "$TEMPORAL_DIR"
+
+    - Verificar contenido
+    echo "Contenido descomprimido:"
+    ls -l "$TEMPORAL_DIR"
+
+    echo "Descompresión completada en $TEMPORAL_DIR"
+
+    # Restaurar desde el directorio temporal#
+
+    #!/bin/bash
+
+    - Definición de rutas
+    TEMPORAL_DATA_DIR="/ruta/al/directorio_temporal/TEMPORAL_DIR_PARA_RESTAURACION/data"
+    RESTORE_PATH="/ruta/al/data/de/postgres/data"
+
+    # 1. Verificar datos en directorio temporal
+    echo "Verificando datos en directorio temporal..."
+    if [ ! -d "$TEMPORAL_DATA_DIR" ]; then
+        echo "Error: No se encuentra el directorio $TEMPORAL_DATA_DIR"
+        exit 1
+    fi
+
+    if [ -z "$(ls -A "$TEMPORAL_DATA_DIR")" ]; then
+        echo "Error: El directorio data está vacío"
+        exit 1
+    fi
+
+    # 2. Preparar directorio de destino (con sudo)
+    echo "Preparando directorio de destino..."
+    echo "Intentando listar contenido (puede requerir contraseña sudo)..."
+    sudo ls -l "$RESTORE_PATH" || {
+        echo "No se pudo verificar el contenido del directorio destino"
+        exit 1
+    }
+
+    read -p "¿Estás seguro de borrar el contenido existente? (y/n) " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "Operación cancelada por el usuario"
+        exit 1
+    fi
+
+    # 3. Limpiar y restaurar con permisos elevados
+    echo "Limpiando directorio destino (requiere privilegios)..."
+    sudo rm -rf "${RESTORE_PATH}"/*
+
+    echo "Restaurando archivos de la base de datos..."
+    sudo cp -r "${TEMPORAL_DATA_DIR}"/* "$RESTORE_PATH/"
+
+    # 4. Ajustar permisos (para PostgreSQL en Docker)
+    echo "Ajustando permisos..."
+    sudo chown -R 999:999 "$RESTORE_PATH"
+    sudo chmod -R 700 "$RESTORE_PATH"
+
+    # 5. Verificación final
+    echo "Verificando la restauración..."
+    sudo ls -l "$RESTORE_PATH"
+
+    echo "Restauración completada con éxito!"
+    echo "Revisa los archivos listados arriba antes de iniciar los servicios"
+
+    # Ejemplo #
+    #!/bin/bash
+
+    - Definición de rutas
+    TEMPORAL_DATA_DIR="/home/mhadmin/TEMPORAL_DIR_PARA_RESTAURACION/data"
+    RESTORE_PATH="/home/mhadmin/docker/volumes/db/var/lib/postgresql/data"
+
+    1. Verificar datos en directorio temporal
+    echo "Verificando datos en directorio temporal..."
+    if [ ! -d "$TEMPORAL_DATA_DIR" ]; then
+        echo "Error: No se encuentra el directorio $TEMPORAL_DATA_DIR"
+        exit 1
+    fi
+
+    if [ -z "$(ls -A "$TEMPORAL_DATA_DIR")" ]; then
+        echo "Error: El directorio data está vacío"
+        exit 1
+    fi
+
+    2. Preparar directorio de destino (con sudo)
+    echo "Preparando directorio de destino..."
+    echo "Intentando listar contenido (puede requerir contraseña sudo)..."
+    sudo ls -l "$RESTORE_PATH" || {
+        echo "No se pudo verificar el contenido del directorio destino"
+        exit 1
+    }
+
+    read -p "¿Estás seguro de borrar el contenido existente? (y/n) " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "Operación cancelada por el usuario"
+        exit 1
+    fi
+
+    3. Limpiar y restaurar con permisos elevados
+    echo "Limpiando directorio destino (requiere privilegios)..."
+    sudo rm -rf "${RESTORE_PATH}"/*
+
+    echo "Restaurando archivos de la base de datos..."
+    sudo cp -r "${TEMPORAL_DATA_DIR}"/* "$RESTORE_PATH/"
+
+    4. Ajustar permisos (para PostgreSQL en Docker)
+    echo "Ajustando permisos..."
+    sudo chown -R 999:999 "$RESTORE_PATH"
+    sudo chmod -R 700 "$RESTORE_PATH"
+
+    5. Verificación final
+    echo "Verificando la restauración..."
+    sudo ls -l "$RESTORE_PATH"
+
+    echo "Restauración completada con éxito!"
+    echo "Revisa los archivos listados arriba antes de iniciar los servicios"
+
+    # Nota #
+    - Se puede verificar la ruta de un volumen con el siguiente comando:
+    docker inspect <nombre_del_contenedor> | grep "Source"
+    Ruta de la data de postgres:
+    /home/mhadmin/docker/volumes/db/var/lib/postgresql/data
+    Ruta de la configuración de mattermost:
+    /home/mhadmin/docker/volumes/app/mattermost/config
+    Ruta de la data de mattermost:
+    /home/mhadmin/docker/volumes/app/mattermost/data
+
+    # Ruta de los backups #
+    Ruta de los backups de postgres data
+    /home/mhadmin/backups_mattermost/<nombre_del_respaldo_comprimido>
+    Ruta de los backups de mattermost data
+    /home/mhadmin/backups_mattermost/mattermost_data/<nombre_del_respaldo_comprimido>
+    Ruta de los backups de mattermost config
+    /home/mhadmin/backups_mattermost/mattermost_config/<nombre_del_respaldo_comprimido>
+
+## Actualización de instrucciones para realizar un Restore (automatico con un script y cron) ##
