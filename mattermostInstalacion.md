@@ -1,56 +1,100 @@
-# Instalación de `Mattermost en Ubuntu Server`
+# Documentación de Instalación de: **Mattermost-team-edition:10.5.4  en Ubuntu Server**
 
-## Requisitos
-- Tener instalado Docker en Ubuntu Server
-- Tener instalado Docker Compose
-prueba
+**Requisitos**
+Esta instalación se realizo en Ubuntu Server 24.04.2 LTS
+Tener instalado Docker version 26.1.3
+Tener instalado docker-compose version 1.29.2
 
-
-## Pasos de instalación
-1. **Instalación de mattermost y postgres en Ubuntu server**:  
-    - Copiar el repositorio de github con el comando:
-        git clone https://github.com/mattermost/docker 
-    - Entrar en Docker con el comando:
+## 1 Instalación de los contenedores de mattermost y postgres en Docker
+### 1. **Clonar el repositorio oficial de mattermost para docker**: 
+    - Usar el siguiente comando:
+    git clone https://github.com/mattermost/docker 
+    - Entrar en el directorio de Docker con el comando:
         cd docker
-    - Ejecute el siguiente comando para copiar el archivo .env del repositorio:
+    - Copiar el archivo de ejemplo de variables de entorno:
         cp env.example .env
     - Comprobar que se haya creado el archivo env.example 
-        ls -l ##Debe aparecer el nombre del archivo##
-    - Se le debe cambiar el nombre al archivo .env por env.NombreDeSuDominio
-        mv env.example env.NombreDeSuDominio
-    - Despues entrar al archivo para editarlo:
+    - Cambiar el nombre de env.example:
+        mv env.example env.<NombreDeSuDominio>
+    * Ejemplo: mv env.example env.maggichat
+### 2. ** Configurar los archivos env y docker-compose **
+    - Entrar al archivo env para editarlo:
         nano env.magicchat
-    - Editar esta linea DOMAIN= y agregar la ip de su servidor
-        Ejemplo: DOMAIN=192.179.8.5
-    - Añade tu usuario al grupo docker:
+    - Editar las siguientes lineas:
+        DOMAIN=<url de su dominio>
+        - TZ=<su zona horaria>
+        POSTGRES_USER=<usuario de postgres>
+        POSTGRES_PASSWORD=<contraseña del usuario de postgres>
+        MATTERMOST_IMAGE=mattermost-team-edition
+        MATTERMOST_IMAGE_TAG=10.5.4
+        MATTERMOST_CONTAINER_READONLY=false
+        MATTERMOST_APP_PORT=8065
+        MM_SQLSETTINGS_DATASOURCE=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable&connect_timeout=10
+        MM_SERVICESETTINGS_SITEURL=<url se su sitio web>
+    * Revisar "Configuración de env.magicchat" para ver la configuración actual
+    - Entrar al archivo docker-compose.yml
+        nano docker-compose.yml
+    - Editar las siguientes lineas:
+        postgres:
+            read_only: false
+            enviroment:
+                - TZ=<su zona horaria>
+        mattermost:
+            entrypoint: sh -c "chmod 755 /entrypoint.sh && /entrypoint.sh mattermost"
+            image: mattermost/mattermost-team-edition:10.5.4
+            ports:
+                - "8065:8065"
+                - "8444:8443"
+                - "80:80"
+                - "443:443"
+            enviroment:
+                - TZ=<su zona horaria>
+                - MM_SQLSETTINGS_DATASOURCE=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable&connect_timeout=10
+                - MM_SERVICESETTINGS_SITEURL=<url de su sitio web>
+    networks:
+        default:
+            name: mattermost_network
+    * Revisar "configuración de docker-compose" para ver la configuración actual
+    ** Los cambios en los archivos env y docker-compose no deben generar conflictos, revisar que la información en uno sea la misma que en el otro
+### 3. ** Comprobación de grupos y permisos ** 
+    - Comprueba que tu usuario pertenece al grupo docker:
+        groups
+    * Resultado esperado: docker debe aparecer en la lista
+    ** Para agregar tu usuario al grupo docker:
         sudo groupadd docker
         sudo usermod -aG docker $USER (mhadmin)
         newgrp docker  # O cierra y abre la terminal
         sudo reboot
-    - Asignar el socket al grupo docker:
-        sudo chown root:docker /var/run/docker.sock
     - Revisar los permisos del socket:
-        ls -l /var/run/docker.sock ##Resultado esperado: srw-rw---- 1 root docker 0 Apr 10 15:58 /var/run/docker.sock##
-    - Reinicia el servidor:
-        sudo systemctl restart docker
-    - Fusiona los siguientes dos archivos de Docker Compose y ejecuta los servicios en background:
-        docker compose -f docker-compose.yml -f docker-compose.without-nginx.yml up -d
-    - Realiza la comprobación:
-        getent group docker  # Debe mostrar el grupo
-        groups              # Debe listar "docker" entre tus grupos
-    - Revisa los permisos:
         ls -l /var/run/docker.sock
-        - Si no muestra docker en los permisos puedes ajustar los permisos con:
+    * Resultado esperado: srw-rw---- 1 root docker 0 Apr 10 15:58 /var/run/docker.sock
+    ** Para asignar el socket al grupo docker:
         sudo chown root:docker /var/run/docker.sock
-    - Comprobar la instalación de los contenedores de mattermost y de postgres:
-        -Dentro de docker: escribir docker ps
-## Si aparece en el contenedor de postgres Restarting
-    - Correr los siguientes comandos:
-        docker inspect docker_postgres_1
-        para mattermost:
-        docker inspect docker_mattermost_1
-        docker logs docker_mattermost_1
-**Si en postgres aparece "ReadonlyRootfs": true**
+        - Reinicia el servidor:
+            sudo systemctl restart docker
+    - Fusiona los siguientes dos archivos de Docker Compose y ejecuta los servicios:
+        docker compose -f docker-compose.yml -f docker-compose.without-nginx.yml up -d
+    El código anterior debió poner en a correr el contenedor de mattermost y de postgres
+    De no ser así realice el siguiente paso
+### 4. ** Iniciar los contenedores de mattermost y postgres**
+    Docker-compose up -d
+    - Comprobar el estado de los contenedores de mattermost y de postgres:
+    docker ps
+#### Soluciónes al estado restarting en los contenedores 
+#### 1 Comprobar los logs por el estado restarting en los contenedores
+    Para saber que causa el estado restarting en los contenedores use los siguientes comandos
+        docker inspect <nombre del contenedor de postgres>
+        o
+        docker logs <nombre del contenedor de postgres>
+        - para mattermost:
+        docker inspect <nombre del contenedor de mattermost>
+        o
+        docker logs <nombre del contenedor de matttermost>
+    * Ejemplo   docker inspect docker_mattermost_1/docker_postgres_1
+                o
+                docker logs docker_mattermost_1/docker_postgres_1
+##### Solución por problemas de permisos de lectura en postgres
+**Si al realizar dockeer inspect en el contenedor de postgres aparece "ReadonlyRootfs": true**
     - Edita el archivo docker-compose.yml
         nano /home/usuario/docker/docker-compose.yml
     - Edita el permiso de ReadonlyRootfs": true, por lo siguiente: ReadonlyRootfs": false
@@ -62,21 +106,43 @@ prueba
     - Verifica el estado de los contenedores:
         docker ps
         - Usa docker logs docker_postgres_1 para revisar los logs y obtener más información si el contenedor de postgres sigue diciendo restarting
-**Si aparece en el contenedor de mattermost Restarting**
-    - Puede deberse a problemas de permiso en los volumenes montados, se puede arreglar dando permisos con el siguiente comando: sudo chown -R 2000:2000 /home/mhadmin/mattermost/volumes/app/ 
 
-2. **Configuración de mattermost**
-    - Editar el archivo :
-        -
-3. **Correr los contenedores de mattermost y postgres**
-    - Usar el comando para correr ambos contenedores
-        - docker start docker_mattermost_1 docker_postgres_1
-
-4. **Comprobar que el servicio sea accesible en local**
+##### Solución por problemas de permisos en el contenedor de mattermost 
+**Si en los logs del contenedor de mattermost dice que faltan permisos**
+    Este error puede producirse por falta de permisos en las rutas a las que necesita acceder mattermost
+    - puede deberse a que es un archivo el que no tiene permisos, para ese caso ubique el archivo sin permisos en los logs del contenedor y use:
+    cd /ruta/hasta/el/archivo/sin/permisos/
+    sudo chown 2000:2000 <nombre del archivo>
+    - Puede deberse a problemas de permiso en los volumenes montados, se puede arreglar dando permisos con el siguiente comando: 
+    sudo chown -R 2000:2000 /ruta/con/falta/de/permisos
+    sudo chown -R 2000:2000 /home/mhadmin/mattermost/volumes/app/
+    * Puede darle permisos a las rutas desde el archivo docker-compose.yml*
+    * Ejemplo: /ruta/hacia/el/documento:rw
+                o
+                chmod -R 755 /ruta/hacia/el/documento
+    * Puede hacer que en el docker-compose.yml se le asigne a un usuario y grupo los contenedores *
+                chown -R 2000:2000 /ruta/
+### 5. **Comprobar que el servicio sea accesible en local**
     - Abrir el navegador e ingresar en la url http://<dirección><puerto> 
-    #Ejemplo: http://localhost:8080 #
-5. **Instalar mattermost en un ordenador**
-    - Descargar mattermost en la página:
+    * Ejemplo: http://192.168.1.7:8065
+
+## 2. Configurar el servicio de mattermost
+## (cualquier modificación debe realizarse tanto en el servicio de mattermost desde
+##  System Console y en config.json)
+### Configurar Web Server
+    -
+#### "Please check connection, Mattermost unreachable..."
+    Si este mensaje aparece en la parte superior de mattermost en color rojo
+    el error puede deberse a que esta mal escrito o no se ha escrito la url del sitio
+    en la configuración de mattermost
+    Comprueba tanto en el archivo env como en docker-compose.yml y en config.json que
+    la url de tu dominio este bien escrito
+    En env.magicchat:
+        MM_SERVICESETTINGS_SITEURL=https://cgnovachat.info
+    En docker-compose.yml:
+        - MM_SERVICESETTINGS_SITEURL=https://cgnovachat.info
+    En config.json:
+        "SiteURL": "https://cgnovachat.info"
 
 ## Creación de un tunel mediante cloudflare ##
 6. **Instalación de cloudflare para**
@@ -137,6 +203,10 @@ prueba
 - Usar el sigueinte comando
     - docker run --rm -v <VolumenNombre>:/data -v $(pwd):/backup alpine tar czvf /backup/<NombreDelBackup>$(date +%Y-%m-%d).tar.gz /data
     - Ejemplo:
+        docker run --rm -v db_postgres_data:/data -v $(pwd):/backup alpine tar czvf /backup/db_postgres_data_backup_$(date +%Y-%m-%d).tar.gz /data
+        o
+        docker run --rm -v db_postgres_data:/data -v $(pwd):/backup alpine tar czvf /backup/db_postgres_data_backup_$(date +%Y-%m-%d).tar.gz /data
+        o
         docker run --rm -v db_postgres_data:/data -v $(pwd):/backup alpine tar czvf /backup/db_postgres_data_backup_$(date +%Y-%m-%d).tar.gz /data
 
 **Para restaurar**
@@ -415,7 +485,7 @@ Reinicia los servicios
 ## Actualización de instrucciones para realizar un Restore de data (manual) ##
 - Crear un directorio temporal en el que se pondrá el backup descomprimido
     mkdir -p TEMPORAL_DIR_PARA_RESTAURACION
-- Descomprimir el backup
+- Descomprimir el backup en el directorio temporal
     #!/bin/bash
 
     - Definición de rutas
@@ -439,19 +509,19 @@ Reinicia los servicios
     # Ejemplo #
     #!/bin/bash
 
-    - Definición de rutas
+    # Definición de rutas
     BACKUP_FILE="/home/mhadmin/backups_mattermost/db_postgres_data_backup_2025-05-07.tar.gz"
     TEMPORAL_DIR="/home/mhadmin/TEMPORAL_DIR_PARA_RESTAURACION"
 
-    - Crear directorio temporal (si no existe)
+    # Crear directorio temporal (si no existe)
     echo "Creando directorio temporal..."
     mkdir -p "$TEMPORAL_DIR"
 
-    - Descomprimir el backup en el directorio temporal
+    # Descomprimir el backup en el directorio temporal
     echo "Descomprimiendo el respaldo..."
     tar -xzf "$BACKUP_FILE" -C "$TEMPORAL_DIR"
 
-    - Verificar contenido
+    # Verificar contenido
     echo "Contenido descomprimido:"
     ls -l "$TEMPORAL_DIR"
 
@@ -461,7 +531,7 @@ Reinicia los servicios
 
     #!/bin/bash
 
-    - Definición de rutas
+    # Definición de rutas
     TEMPORAL_DATA_DIR="/ruta/al/directorio_temporal/TEMPORAL_DIR_PARA_RESTAURACION/data"
     RESTORE_PATH="/ruta/al/data/de/postgres/data"
 
@@ -514,7 +584,7 @@ Reinicia los servicios
     # Ejemplo #
     #!/bin/bash
 
-    - Definición de rutas
+    # Definición de rutas
     TEMPORAL_DATA_DIR="/home/mhadmin/TEMPORAL_DIR_PARA_RESTAURACION/data"
     RESTORE_PATH="/home/mhadmin/docker/volumes/db/var/lib/postgresql/data"
 
@@ -575,6 +645,8 @@ Reinicia los servicios
     /home/mhadmin/docker/volumes/app/mattermost/data
 
     # Ruta de los backups #
+    - Se puede buscar un archivo con el siguiente comando
+    find / -name "nombre_del_archivo" 2>/dev/null
     Ruta de los backups de postgres data
     /home/mhadmin/backups_mattermost/<nombre_del_respaldo_comprimido>
     Ruta de los backups de mattermost data
@@ -583,3 +655,55 @@ Reinicia los servicios
     /home/mhadmin/backups_mattermost/mattermost_config/<nombre_del_respaldo_comprimido>
 
 ## Actualización de instrucciones para realizar un Restore (automatico con un script y cron) ##
+
+#!/bin/bash
+
+# Definición de rutas
+TEMPORAL_DATA_DIR="/home/mhadmin/TEMPORAL_DIR_PARA_RESTAURACION/config"
+RESTORE_PATH="/home/mhadmin/docker/volumes/app/mattermost/config"
+
+# 1. Verificar datos en directorio temporal
+echo "Verificando datos en directorio temporal..."
+if [ ! -d "$TEMPORAL_DATA_DIR" ]; then
+    echo "Error: No se encuentra el directorio $TEMPORAL_DATA_DIR"
+    exit 1
+fi
+
+if [ -z "$(ls -A "$TEMPORAL_DATA_DIR")" ]; then
+    echo "Error: El directorio data está vacío"
+    exit 1
+fi
+
+# 2. Preparar directorio de destino (con sudo)
+echo "Preparando directorio de destino..."
+echo "Intentando listar contenido (puede requerir contraseña sudo)..."
+sudo ls -l "$RESTORE_PATH" || {
+    echo "No se pudo verificar el contenido del directorio destino"
+    exit 1
+}
+
+read -p "¿Estás seguro de borrar el contenido existente? (y/n) " -n 1 -r
+echo
+if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    echo "Operación cancelada por el usuario"
+    exit 1
+fi
+
+# 3. Limpiar y restaurar con permisos elevados
+echo "Limpiando directorio destino (requiere privilegios)..."
+sudo rm -rf "${RESTORE_PATH}"/*
+
+echo "Restaurando archivos de la base de datos..."
+sudo cp -r "${TEMPORAL_DATA_DIR}"/* "$RESTORE_PATH/"
+
+# 4. Ajustar permisos (para PostgreSQL en Docker)
+echo "Ajustando permisos..."
+sudo chown -R 999:999 "$RESTORE_PATH"
+sudo chmod -R 700 "$RESTORE_PATH"
+
+# 5. Verificación final
+echo "Verificando la restauración..."
+sudo ls -l "$RESTORE_PATH"
+
+echo "Restauración completada con éxito!"
+echo "Revisa los archivos listados arriba antes de iniciar los servicios"
