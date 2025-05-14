@@ -14,8 +14,8 @@ Tener instalado docker-compose version 1.29.2
     - Copiar el archivo de ejemplo de variables de entorno:
         cp env.example .env
     - Comprobar que se haya creado el archivo env.example 
-    - Cambiar el nombre de env.example:
-        mv env.example env.<NombreDeSuDominio>
+    - Puede cambiar el nombre de env.example si se quiere:
+        mv env.example env.<CambioDeNombre>
     * Ejemplo: mv env.example env.maggichat
 ### 2. ** Configurar los archivos env y docker-compose **
     - Entrar al archivo env para editarlo:
