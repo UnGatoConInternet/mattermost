@@ -347,7 +347,7 @@ Ejemplo de como debe estar según el .env del ejemplo anterior
 ## Si el contenedor de docker muestra "Restarting" y la contraseña para conectarse a postgres es incorrecta ##
 Es probable que las credenciales del usuario con el que mattermost entraba a postgres se hayan eliminado
 - Comprueba que la contraseña puesta en el env.magicchat sea correcto
-    docker inspect <nombre_contenedor_mattermost> | grep -A 10 "POSTGRES_PASSWORD"
+    docker inspect <nombre_contenedor_mattermost> | grep -A 10 "POSTGRES_USER"
 - Ingresar a postgres con el usuario que esta en env.magicchat
     docker exec -it docker_postgres_1 psql -U mmuser -d mattermost -c "\du"
 - Remplaza Cambia la contraseña del usuario con la que sale en env.magicchat

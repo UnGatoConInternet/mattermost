@@ -180,12 +180,16 @@ Tener instalado docker-compose version 1.29.2
     para solucionarlo basta con cambiarle la contraseña a la de la variable de env
     POSTGRES_PASSWORD=<contraseña>
     Con el contenedor de postgrest en estado up:
+    - Comprueba que la contraseña puesta en el env sea correcto
+        docker inspect <nombre_contenedor_postgres> | grep -A 10 "POSTGRES_USER"
+
     - Conectate a postgres con el usuario en env
         docker exec -it <nombre_del_contenedor_de_postgres> psql -U <usuario> -d <base_de_datos>
     * Ejemplo:
         docker exec -it docker_postgres_1 psql -U mmuser -d mattermost 
+
     - Cambiar la contraseña del usuario de mattermost
-        ALTER USER <usuario> WITH PASSWORD '<tu_nueva_contraseña_segura>';
+        ALTER USER <usuario> WITH PASSWORD '<la_contraseña_puesta_en_el_env_o_yml>';
     - Volver a crear el contenedor
         docker-compose up -d
 ##### Solución al error failed to load configuration: failed to create store: unable to load
