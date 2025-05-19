@@ -1,4 +1,4 @@
-# Documentación de Instalación de: **Configuración de Mattermost**
+# Documentación de: **Configuración de Mattermost**
 ## 2. Configurar el servicio de mattermost
 ## (cualquier modificación debe realizarse tanto en el servicio de mattermost desde
 ##  System Console y en config.json)
@@ -383,7 +383,7 @@ Reinicia los servicios
     #!/bin/bash
 
     # Definición de rutas
-    BACKUP_FILE="/home/mhadmin/backups_mattermost/db_postgres_data_backup_2025-05-07.tar.gz"
+    BACKUP_FILE="/home/mhadmin/backups_mattermost/db_postgres_data_backup_2025-05-15.tar.gz"
     TEMPORAL_DIR="/home/mhadmin/TEMPORAL_DIR_PARA_RESTAURACION"
 
     # Crear directorio temporal (si no existe)
@@ -580,3 +580,86 @@ sudo ls -l "$RESTORE_PATH"
 
 echo "Restauración completada con éxito!"
 echo "Revisa los archivos listados arriba antes de iniciar los servicios"
+
+## Lista de Pasos para Resolver "Permission Denied" al Detener/Eliminar un Contenedor PostgreSQL
+1. Verificar el estado del contenedor y procesos asociados
+bash
+sudo docker ps -a | grep postgres  # Identifica el nombre del contenedor
+ps aux | grep postgres            # Busca procesos de PostgreSQL en el sistema
+2. Intentar detener el contenedor normalmente
+bash
+sudo docker stop docker_postgres_1  # Reemplaza con el nombre de tu contenedor
+3. Si falla, forzar la eliminación del contenedor
+bash
+sudo docker rm -f docker_postgres_1
+4. Si persiste el error, matar el proceso manualmente
+Obtén el PID del proceso PostgreSQL:
+
+bash
+ps aux | grep $(sudo docker inspect -f '{{.State.Pid}}' docker_postgres_1)
+Mata el proceso (ejemplo con PID 3628):
+
+bash
+sudo kill -9 3628
+Vuelve a intentar eliminar el contenedor:
+
+bash
+sudo docker rm -f docker_postgres_1
+o
+docker-compose down
+
+## lo anterior debió eliminar el contenedor
+5. Reiniciar el servicio Docker (si hay bloqueos)
+bash
+sudo systemctl restart docker
+6. Verificar y limpiar recursos huérfanos
+bash
+sudo docker system prune -a --volumes  # Cuidado: elimina contenedores, imágenes y volúmenes no utilizados
+7. Si el problema es recurrente, revisar permisos y reinstalar Docker
+Asegúrate de que tu usuario esté en el grupo docker:
+
+bash
+sudo usermod -aG docker $USER
+newgrp docker  # Actualiza la sesión
+Si usas Docker instalado via Snap (recomendado migrar a Docker nativo):
+
+bash
+sudo snap remove docker
+sudo apt-get install docker.io
+8. Prevención futura
+Evita apagados bruscos del servidor o contenedores.
+
+Usa volúmenes persistentes para datos críticos (como PostgreSQL).
+
+Monitorea los logs:
+
+bash
+sudo docker logs docker_postgres_1
+Resumen Rápido (Cheatsheet)
+Listar procesos y contenedores → ps aux | grep postgres + docker ps -a.
+
+Intentar detener/eliminar → docker stop / docker rm -f.
+
+Matar proceso manual → kill -9 <PID>.
+
+Reiniciar Docker → sudo systemctl restart docker.
+
+Limpiar recursos → docker system prune.
+
+Revisar instalación → Migrar de Snap a Docker nativo si es necesario.
+
+Notas Adicionales
+Si el contenedor aloja una base de datos, asegúrate de tener backups antes de forzar su eliminación.
+
+El error suele ocurrir por conflictos entre el proceso dentro del contenedor y el sistema host.
+
+## Resolver problemas de puertos ocupados por docker
+# 1. Identificar el qué esta ocupando el puerto
+sudo lsof -i :80
+COMMAND     PID USER   FD   TYPE DEVICE SIZE/OFF NODE NAME
+docker-pr 14509 root    4u  IPv4  63216      0t0  TCP *:http (LISTEN)
+docker-pr 14518 root    4u  IPv6  60271      0t0  TCP *:http (LISTEN)
+* Probar con los puertos 80, 443, 8065 y 8444
+# 2. Obtén los PIDs de los procesos docker-pr (14509 y 14518 en este caso)
+sudo kill -9 14509 14518
+# 3. Ahora el comando sudo lsof -i :80 ya no debe regresar ningún mensaje

@@ -1,5 +1,5 @@
 # Domain of service
-DOMAIN=192.168.1.7
+DOMAIN=https://cgnovachat.info
 
 # Container settings
 ## Timezone inside the containers. The value needs to be in the form 'Europe/Be>## A list of these tz database names can be looked up at Wikipedia
@@ -10,7 +10,8 @@ RESTART_POLICY=unless-stopped
 # Postgres settings
 ## Documentation for this image and available settings can be found on hub.dock>## https://hub.docker.com/_/postgres
 ## Please keep in mind this will create a superuser and it's recommended to use>## user to connect to the database.
-## A guide on how to change the database user to a nonsuperuser can be found in>POSTGRES_IMAGE_TAG=13-alpine
+## A guide on how to change the database user to a nonsuperuser can be found in>
+POSTGRES_IMAGE_TAG=13-alpine
 POSTGRES_DATA_PATH=./volumes/db/var/lib/postgresql/data
 
 POSTGRES_USER=mmuser
@@ -30,6 +31,7 @@ CERT_PATH=./volumes/web/cert/cert.pem
 KEY_PATH=./volumes/web/cert/key-no-password.pem
 
 ## Exposed ports to the host. Inside the container 80, 443 and 8443 will be usedHTTPS_PORT=443
+HTTPS_PORT=443
 HTTP_PORT=80
 CALLS_PORT=8443
 
@@ -44,8 +46,10 @@ MATTERMOST_BLEVE_INDEXES_PATH=/home/mhadmin/docker/volumes/app/mattermost/bleve-
 ## Bleve index (inside the container)
 MM_BLEVESETTINGS_INDEXDIR=/mattermost/bleve-indexes
 
-## This will be 'mattermost-enterprise-edition' or 'mattermost-team-edition' ba>MATTERMOST_IMAGE=mattermost-team-edition
-## Update the image tag if you want to upgrade your Mattermost version. You may>MATTERMOST_IMAGE_TAG=10.5.4
+## This will be 'mattermost-enterprise-edition' or 'mattermost-team-edition' ba>
+MATTERMOST_IMAGE=mattermost-team-edition
+## Update the image tag if you want to upgrade your Mattermost version. You may>
+MATTERMOST_IMAGE_TAG=10.5.4
 
 ## Make Mattermost container readonly. This interferes with the regeneration of>## it if you know what you're doing.
 ## See https://github.com/mattermost/docker/issues/18

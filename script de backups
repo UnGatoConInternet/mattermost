@@ -1,0 +1,79 @@
+tengo este código en un solo archivo. Dime si hay cambios que debo hacer o si hay errores como que se asignen dos valores distintos a la misma variable ahora dime si hay cosas que corregir de este código # --------------------------------------------
+# 1. Backup de postgres_data
+# --------------------------------------------
+#!/bin/bash
+
+        # Directorios donde se guardarán los backups
+        PRIMARY_BACKUP_DIR="/home/mhadmin/backups_mattermost"
+        SECONDARY_BACKUP_DIR="/mnt/carpeta_compartida/postgres_data"
+
+        # Crear los directorios si no existen
+        mkdir -p "$PRIMARY_BACKUP_DIR"
+        mkdir -p "$SECONDARY_BACKUP_DIR"
+
+        # Nombre del archivo de backup con fecha
+        BACKUP_FILE="db_postgres_data_backup_$(date +%Y-%m-%d).tar.gz"
+
+        # Ejecutar el comando de docker con ambos volúmenes montados
+        docker run --rm \
+          -v db_postgres_data:/data \
+          -v "$PRIMARY_BACKUP_DIR":/backup1 \
+          -v "$SECONDARY_BACKUP_DIR":/backup2 \
+          alpine sh -c "tar czvf /backup1/$BACKUP_FILE /data && cp /backup1/$BACKUP_FILE /backup2/"
+
+        # Eliminar backups antiguos (conserva los últimos 4) en ambos directorios
+        find "$PRIMARY_BACKUP_DIR" -name "db_postgres_data_backup_*.tar.gz" -mtime +4 -exec rm {} \;
+        find "$SECONDARY_BACKUP_DIR" -name "db_postgres_data_backup_*.tar.gz" -mtime +4 -exec rm {} \;  
+# --------------------------------------------
+# 2. Backup de mattermost_data
+# --------------------------------------------
+
+        # Directorios de backup
+        PRIMARY_BACKUP_DIR="/home/mhadmin/backups_mattermost/mattermost_data"
+        SECONDARY_BACKUP_DIR="/mnt/carpeta_compartida/mattermost_data"
+
+        # Crear directorios si no existen
+        mkdir -p "$PRIMARY_BACKUP_DIR"
+        mkdir -p "$SECONDARY_BACKUP_DIR"
+
+        # Nombre del archivo de backup
+        BACKUP_FILE="mattermost_data_backup_$(date +%Y-%m-%d).tar.gz"
+
+        # Ejecutar Docker con DOS volúmenes montados:
+        # 1. mattermost_data (origen de los datos)
+        # 2. PRIMARY_BACKUP_DIR → guarda el backup aquí
+        # 3. SECONDARY_BACKUP_DIR → guarda una COPIA aquí al mismo tiempo
+        docker run --rm \
+          -v mattermost_data:/data \
+          -v "$PRIMARY_BACKUP_DIR":/backup_primary \
+          -v "$SECONDARY_BACKUP_DIR":/backup_secondary \
+          alpine sh -c "tar czvf /backup_primary/$BACKUP_FILE /data && cp /backup_primary/$BACKUP_FILE /backup_secondary/"
+
+        # Eliminar backups antiguos (más de 4 días) en AMBAS ubicaciones
+        find "$PRIMARY_BACKUP_DIR" -name "mattermost_data_backup_*.tar.gz" -mtime +4 -exec rm {} \;
+        find "$SECONDARY_BACKUP_DIR" -name "mattermost_data_backup_*.tar.gz" -mtime +4 -exec rm {} \; 
+# --------------------------------------------
+# 3. Backup de mattermost_config
+# --------------------------------------------
+
+        # Directorios de backup
+        PRIMARY_BACKUP_DIR="/home/mhadmin/backups_mattermost/mattermost_config"
+        SECONDARY_BACKUP_DIR="/mnt/carpeta_compartida/mattermost_config"
+
+        # Crear directorios si no existen
+        mkdir -p "$PRIMARY_BACKUP_DIR"
+        mkdir -p "$SECONDARY_BACKUP_DIR"
+
+        # Nombre del archivo backup
+        BACKUP_FILE="mattermost_config_backup_$(date +%Y-%m-%d).tar.gz"
+
+        # Comando de docker para generar los backups
+        docker run --rm \
+          -v mattermost_config:/config \
+          -v "$PRIMARY_BACKUP_DIR":/backup_primary \
+          -v "$SECONDARY_BACKUP_DIR":/backup_secondary \
+          alpine sh -c "tar czvf /backup_primary/$BACKUP_FILE /config && cp /backup_primary/$BACKUP_FILE /backup_secondary/"
+
+        # Eliminar los backups antiguos de más de 4 días
+        find "$PRIMARY_BACKUP_DIR" -name "mattermost_config_backup_*.tar.gz" -mtime +4 -exec rm {} \;
+        find "$SECONDARY_BACKUP_DIR" -name "mattermost_config_backup_*.tar.gz" -mtime +4 -exec rm {} \;

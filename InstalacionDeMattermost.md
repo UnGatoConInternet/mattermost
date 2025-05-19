@@ -11,46 +11,65 @@ Tener instalado docker-compose version 1.29.2
     git clone https://github.com/mattermost/docker 
     - Entrar en el directorio de Docker con el comando:
         cd docker
-    - Copiar el archivo de ejemplo de variables de entorno:
-        cp env.example .env
     - Comprobar que se haya creado el archivo env.example 
-    - Puede cambiar el nombre de env.example si se quiere:
+    * Si no se creo el archivo env se puede copiar el archivo de variables de entorno:
+        cp env.example .env
+    * Puede cambiar el nombre de env.example si se quiere:
         mv env.example env.<CambioDeNombre>
     * Ejemplo: mv env.example env.maggichat
-### 2. ** Configurar los archivos env y docker-compose **
+### 2. ** Configurar el archivo env**
     - Entrar al archivo env para editarlo:
         nano env.magicchat
     - Editar las siguientes lineas:
         DOMAIN=<url de su dominio>
+        # Ejemplo: cgnovachat.info o ip
         - TZ=<su zona horaria>
+        # Ejemplo: America/Cancun
+        *Si se desea cambiar los valores de usuario de postgres:
+        *Si se quiere puede dejar los valores de usuario postgres default
         POSTGRES_USER=<usuario de postgres>
-        POSTGRES_PASSWORD=<contraseña del usuario de postgres>
+        # Ejemplo: mmuser
+        POSTGRES_PASSWORD=<contraseña del usuario>
+        # Ejemplo: mmuser_password
         MATTERMOST_IMAGE=mattermost-team-edition
         MATTERMOST_IMAGE_TAG=10.5.4
         MATTERMOST_CONTAINER_READONLY=false
-        MATTERMOST_APP_PORT=8065
         MM_SQLSETTINGS_DATASOURCE=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable&connect_timeout=10
-        MM_SERVICESETTINGS_SITEURL=<url se su sitio web>
     * Revisar "Configuración de env.magicchat" para ver la configuración actual
+### 2.1 ** Configurar el archivo docker-compose.yml **
     - Entrar al archivo docker-compose.yml
         nano docker-compose.yml
     - Editar las siguientes lineas:
         postgres:
+            security_opt:
+                - no-new-privileges:false
             read_only: false
             enviroment:
-                - TZ=<su zona horaria>
+                - TZ=<su zona horaria> 
+                # Ejemplo: America/Cancun
+            healthcheck:
+                test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+                interval: 5s
+                timeout: 5s
+                retries: 5
         mattermost:
             entrypoint: sh -c "chmod 755 /entrypoint.sh && /entrypoint.sh mattermost"
-            image: mattermost/mattermost-team-edition:10.5.4
+            *Abajo de image*
             ports:
                 - "8065:8065"
                 - "8444:8443"
                 - "80:80"
                 - "443:443"
+            security_opt:
+                - no-new-privileges:false
             enviroment:
                 - TZ=<su zona horaria>
+                # Ejemplo: America/Cancun
+                - MM_SQLSETTINGS_DRIVERNAME=postgres
                 - MM_SQLSETTINGS_DATASOURCE=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable&connect_timeout=10
-                - MM_SERVICESETTINGS_SITEURL=<url de su sitio web>
+                - MM_BLEVESETTINGS_INDEXDIR=${MM_BLEVESETTINGS_INDEXDIR}
+                - MM_SERVICESETTINGS_SITEURL=${MM_SERVICESETTINGS_SITEURL}
+                # Ejemplo: https://cgnovachat.info
     networks:
         default:
             name: mattermost_network
@@ -72,10 +91,6 @@ Tener instalado docker-compose version 1.29.2
         sudo chown root:docker /var/run/docker.sock
         - Reinicia el servidor:
             sudo systemctl restart docker
-    - Fusiona los siguientes dos archivos de Docker Compose y ejecuta los servicios:
-        docker compose -f docker-compose.yml -f docker-compose.without-nginx.yml up -d
-    El código anterior debió poner en a correr el contenedor de mattermost y de postgres
-    De no ser así realice el siguiente paso
 ### 4. ** Iniciar los contenedores de mattermost y postgres**
     Docker-compose up -d
     - Comprobar el estado de los contenedores de mattermost y de postgres:
@@ -143,6 +158,10 @@ Tener instalado docker-compose version 1.29.2
         docker exec -it <nombre_del_contenedor> psql -U <usuario> -d <base_de_datos>
     - Cambiar la contraseña del usuario de mattermost
         ALTER USER postgres WITH PASSWORD 'tu_nueva_contraseña_segura';
+##### Solución al error failed to load configuration: failed to create store: unable to load
+##### on store creation: invalid config: Config.IsValid: Invalid driver name for SQL
+##### settings. Must be 'mysql' or 'postgres'.
+
 ### 5. **Comprobar que el servicio sea accesible en local**
     - Abrir el navegador e ingresar en la url http://<dirección><puerto> 
     * Ejemplo: http://192.168.1.7:8065
