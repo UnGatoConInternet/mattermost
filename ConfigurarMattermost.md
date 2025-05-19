@@ -383,7 +383,7 @@ Reinicia los servicios
     #!/bin/bash
 
     # Definición de rutas
-    BACKUP_FILE="/home/mhadmin/backups_mattermost/db_postgres_data_backup_2025-05-15.tar.gz"
+    BACKUP_FILE="/home/mhadmin/mnt/carpeta_compartida/postgres_data/db_postgres_data_backup_2025-05-15.tar.gz"
     TEMPORAL_DIR="/home/mhadmin/TEMPORAL_DIR_PARA_RESTAURACION"
 
     # Crear directorio temporal (si no existe)

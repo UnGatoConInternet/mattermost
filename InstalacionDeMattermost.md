@@ -9,17 +9,26 @@ Tener instalado docker-compose version 1.29.2
 ### 1. **Clonar el repositorio oficial de mattermost para docker**: 
     - Usar el siguiente comando:
     git clone https://github.com/mattermost/docker 
+
     - Entrar en el directorio de Docker con el comando:
         cd docker
+
     - Comprobar que se haya creado el archivo env.example 
-    * Si no se creo el archivo env se puede copiar el archivo de variables de entorno:
+        ls -l
+        * Debe aparecer env.example
+
+    * Si no se creó el archivo env se puede copiar:
         cp env.example .env
+
     * Puede cambiar el nombre de env.example si se quiere:
         mv env.example env.<CambioDeNombre>
+
     * Ejemplo: mv env.example env.maggichat
+
 ### 2. ** Configurar el archivo env**
     - Entrar al archivo env para editarlo:
         nano env.magicchat
+
     - Editar las siguientes lineas:
         DOMAIN=<url de su dominio>
         # Ejemplo: cgnovachat.info o ip
@@ -35,10 +44,13 @@ Tener instalado docker-compose version 1.29.2
         MATTERMOST_IMAGE_TAG=10.5.4
         MATTERMOST_CONTAINER_READONLY=false
         MM_SQLSETTINGS_DATASOURCE=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable&connect_timeout=10
+
     * Revisar "Configuración de env.magicchat" para ver la configuración actual
+
 ### 2.1 ** Configurar el archivo docker-compose.yml **
     - Entrar al archivo docker-compose.yml
         nano docker-compose.yml
+
     - Editar las siguientes lineas:
         postgres:
             security_opt:
@@ -73,28 +85,38 @@ Tener instalado docker-compose version 1.29.2
     networks:
         default:
             name: mattermost_network
+
     * Revisar "configuración de docker-compose" para ver la configuración actual
-    ** Los cambios en los archivos env y docker-compose no deben generar conflictos, revisar que la información en uno sea la misma que en el otro
+
+    ** Los cambios en los archivos env y docker-compose no deben generar conflictos, revisar que la información en el .env sea la misma que en el .yml
+    ** Ejemplo: tener en .env DOMAIN=cgnovachat.com y en .yml - MM_SERVICESETTINGS_SITEURL=https://cgnovachat.org
+
 ### 3. ** Comprobación de grupos y permisos ** 
     - Comprueba que tu usuario pertenece al grupo docker:
         groups
+
     * Resultado esperado: docker debe aparecer en la lista
     ** Para agregar tu usuario al grupo docker:
         sudo groupadd docker
         sudo usermod -aG docker $USER (mhadmin)
         newgrp docker  # O cierra y abre la terminal
         sudo reboot
+
     - Revisar los permisos del socket:
         ls -l /var/run/docker.sock
+
     * Resultado esperado: srw-rw---- 1 root docker 0 Apr 10 15:58 /var/run/docker.sock
     ** Para asignar el socket al grupo docker:
         sudo chown root:docker /var/run/docker.sock
         - Reinicia el servidor:
             sudo systemctl restart docker
+
 ### 4. ** Iniciar los contenedores de mattermost y postgres**
-    Docker-compose up -d
+    - Para iniciar los contenedores de mattermost y postgres mediante el archivo docker-compose.yml:
+        cd docker
+        Docker-compose up -d
     - Comprobar el estado de los contenedores de mattermost y de postgres:
-    docker ps
+        docker ps
 #### Soluciónes al estado restarting en los contenedores 
 #### 1 Comprobar los logs por el estado restarting en los contenedores
     Para saber que causa el estado restarting en los contenedores use los siguientes comandos
@@ -138,11 +160,14 @@ Tener instalado docker-compose version 1.29.2
     * Puede hacer que en el docker-compose.yml se le asigne a un usuario y grupo los contenedores *
                 chown -R 2000:2000 /ruta/
 **Si en los logs del contenedor de mattermost dice que no puede conectarse a la base de datos**
+    * Este error puede surgir al realizar un restore de la data de postgres
     Si entre los mensajes aparece que el usuario de mattermost ha fallado al intentar conectarse a la base de datos
     -Comprobar que en el archivo env y docker-compose el usuario de postgres sea el mismo
+    * Ejemplo: 
     POSTGRES_USER=mmuser
     POSTGRES_PASSWORD=mmuser_password
     POSTGRES_DB=mattermost
+
     - En config.json comprobar que DataSource use la información del usuario y la base de datos correctamente
         "SqlSettings": {
             "DriverName": "postgres",
@@ -150,14 +175,19 @@ Tener instalado docker-compose version 1.29.2
         }
     Comprobar que esto este corregido tambien en el archivo env y docker-compose
         "postgres://<Usuario>:<Contraseña>@<Servicio:puerto>/<base_de_datos>?sslmode=disable\u0026connect_timeout=10\u0026binary_parameters=yes"
-    Si el problema persiste puede ser que se hayan borrado las credenciales el usuario mediante el cual mattermost se conecta con postgres
+
+    * Si el problema persiste puede ser que se hayan borrado las credenciales el usuario mediante el cual mattermost se conecta con postgres
     para solucionarlo basta con cambiarle la contraseña a la de la variable de env
     POSTGRES_PASSWORD=<contraseña>
     Con el contenedor de postgrest en estado up:
     - Conectate a postgres con el usuario en env
-        docker exec -it <nombre_del_contenedor> psql -U <usuario> -d <base_de_datos>
+        docker exec -it <nombre_del_contenedor_de_postgres> psql -U <usuario> -d <base_de_datos>
+    * Ejemplo:
+        docker exec -it docker_postgres_1 psql -U mmuser -d mattermost 
     - Cambiar la contraseña del usuario de mattermost
-        ALTER USER postgres WITH PASSWORD 'tu_nueva_contraseña_segura';
+        ALTER USER <usuario> WITH PASSWORD '<tu_nueva_contraseña_segura>';
+    - Volver a crear el contenedor
+        docker-compose up -d
 ##### Solución al error failed to load configuration: failed to create store: unable to load
 ##### on store creation: invalid config: Config.IsValid: Invalid driver name for SQL
 ##### settings. Must be 'mysql' or 'postgres'.
