@@ -24,9 +24,12 @@
     -Usar el siguiente comando
     cloudflared tunnel run tunelprueba
 
-10. **Link para registrar usuarios**
+   **Nota**
+   La parte de certs debe ir dentro de /etc/<dirección del procertificados de cloudflare domain> del servidor de ubuntu
 
-11. **Correr el tunel creado conn docker compose** Corregir
+11. **Link para registrar usuarios**
+
+12. **Correr el tunel creado conn docker compose** Corregir
     - Editar el archivo docker-compose.yml:
         cd docker
         nano docker-compose.yml
