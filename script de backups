@@ -1,4 +1,4 @@
-tengo este código en un solo archivo. Dime si hay cambios que debo hacer o si hay errores como que se asignen dos valores distintos a la misma variable ahora dime si hay cosas que corregir de este código # --------------------------------------------
+# --------------------------------------------
 # 1. Backup de postgres_data
 # --------------------------------------------
 #!/bin/bash

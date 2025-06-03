@@ -56,7 +56,7 @@ Tener instalado docker-compose version 1.29.2
             security_opt:
                 - no-new-privileges:false
             read_only: false
-            enviroment:
+            environment:
                 - TZ=<su zona horaria> 
                 # Ejemplo: America/Cancun
             healthcheck:
@@ -74,7 +74,7 @@ Tener instalado docker-compose version 1.29.2
                 - "443:443"
             security_opt:
                 - no-new-privileges:false
-            enviroment:
+            environment:
                 - TZ=<su zona horaria>
                 # Ejemplo: America/Cancun
                 - MM_SQLSETTINGS_DRIVERNAME=postgres
@@ -106,7 +106,7 @@ Tener instalado docker-compose version 1.29.2
         ls -l /var/run/docker.sock
 
     * Resultado esperado: srw-rw---- 1 root docker 0 Apr 10 15:58 /var/run/docker.sock
-    ** Para asignar el socket al grupo docker:
+    - Para asignar el socket al grupo docker:
         sudo chown root:docker /var/run/docker.sock
         - Reinicia el servidor:
             sudo systemctl restart docker
@@ -114,7 +114,7 @@ Tener instalado docker-compose version 1.29.2
 ### 4. ** Iniciar los contenedores de mattermost y postgres**
     - Para iniciar los contenedores de mattermost y postgres mediante el archivo docker-compose.yml:
         cd docker
-        Docker-compose up -d
+        docker-compose up -d
     - Comprobar el estado de los contenedores de mattermost y de postgres:
         docker ps
 #### Soluciónes al estado restarting en los contenedores 
@@ -150,6 +150,7 @@ Tener instalado docker-compose version 1.29.2
     - puede deberse a que es un archivo el que no tiene permisos, para ese caso ubique el archivo sin permisos en los logs del contenedor y use:
     cd /ruta/hasta/el/archivo/sin/permisos/
     sudo chown 2000:2000 <nombre del archivo>
+    * (2000:2000 es el UID/GID predeterminado de Mattermost)
     - Puede deberse a problemas de permiso en los volumenes montados, se puede arreglar dando permisos con el siguiente comando: 
     sudo chown -R 2000:2000 /ruta/con/falta/de/permisos
     sudo chown -R 2000:2000 /home/mhadmin/mattermost/volumes/app/
@@ -157,7 +158,7 @@ Tener instalado docker-compose version 1.29.2
     * Ejemplo: /ruta/hacia/el/documento:rw
                 o
                 chmod -R 755 /ruta/hacia/el/documento
-    * Puede hacer que en el docker-compose.yml se le asigne a un usuario y grupo los contenedores *
+    * Puede hacer que desde el docker-compose.yml se le asigne un usuario y grupo a los contenedores *
                 chown -R 2000:2000 /ruta/
 **Si en los logs del contenedor de mattermost dice que no puede conectarse a la base de datos**
     * Este error puede surgir al realizar un restore de la data de postgres
