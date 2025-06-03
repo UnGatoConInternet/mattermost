@@ -7,7 +7,7 @@ Tener instalado docker-compose version 1.29.2
 
 ## 1 Instalación de los contenedores de mattermost y postgres en Docker
 ### 1. **Clonar el repositorio oficial de mattermost para docker**: 
-    - Usar el siguiente comando:
+    - Usar el siguiente comando para crear una carpeta llamada docker que contendrá los archivos del repositorio de mattermost:
     git clone https://github.com/mattermost/docker 
 
     - Entrar en el directorio de Docker con el comando:
