@@ -1,0 +1,2 @@
+- El archivo por el que se quiere empezar y que contiene la información más relevante es instalaciónDeMattermost.md
+- después de instalar Mattermost, los otros archivos van a ayudar a configurar sus diferentes aspectos.
