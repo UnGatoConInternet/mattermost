@@ -4,7 +4,7 @@ services:
     image: postgres:${POSTGRES_IMAGE_TAG}
     restart: ${RESTART_POLICY}
     security_opt:
-      - no-new-privileges:false
+      - "no-new-privileges:false"
     tmpfs:
       - /tmp
       - /var/run/postgresql
@@ -38,7 +38,7 @@ services:
       - "443:443"
     restart: ${RESTART_POLICY}
     security_opt:
-      - no-new-privileges:false
+      - "no-new-privileges:false"
     pids_limit: 300
     read_only: ${MATTERMOST_CONTAINER_READONLY}
     tmpfs:
