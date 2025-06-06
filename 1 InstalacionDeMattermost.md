@@ -107,8 +107,9 @@ Esta instalación se realizo en Ubuntu Server 24.04.2 LTS
                 - MM_SQLSETTINGS_DRIVERNAME=postgres
                 - MM_SQLSETTINGS_DATASOURCE=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable&connect_timeout=10
                 - MM_BLEVESETTINGS_INDEXDIR=${MM_BLEVESETTINGS_INDEXDIR}
-                - MM_SERVICESETTINGS_SITEURL=${MM_SERVICESETTINGS_SITEURL}
+                #MM_SERVICESETTINGS_SITEURL=${MM_SERVICESETTINGS_SITEURL}
                 # Ejemplo: https://cgnovachat.info
+                # Se comenta MM_SERVICESETTINGS_SITEURL para poder editar la url desde system console y que la url del sitio pueda cambiarse por los administradores
 
     -   Agregar lo siguiente:
     networks:
