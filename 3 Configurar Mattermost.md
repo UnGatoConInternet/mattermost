@@ -109,13 +109,45 @@
     - Push Notification Server: https://push-test.mattermost.com
     - Guardar los cambios en SAVE
 
-## Configurar Notifications (creo que no se edita)
+## Configurar Session Lengths
+    - Extend session length with activity: True
+    - Terminate Sessions on Password Change: True
+
+> **Nota importante**: El siguiente paso es para producción
+
+## Configurar Developer Settings
     - Haz click en el cuadrado en la esquina superior izquierda (debajo de los 3 puntos)
     - Selecciona: System Console
-    - En el menú izquierdo ve a: Site configuration > Notifications
+    - En el menú izquierdo ve a: Environment > Developer
     - Poner la siguiente información:
-        Show @channel, @all, @here and group mention confirmation dialog:   True
-        Enable Email Notifications: True
+        Enable Testing Commands:    False
+        Enable Developer Mode:  False
+        Enable Client Performance Debugging: False
+    - Guardar los cambios en SAVE
+
+## Configurar Customization
+    - Haz click en el cuadrado en la esquina superior izquierda (debajo de los 3 puntos)
+    - Selecciona: System Console
+    - En el menú izquierdo ve a: Site configuration > Customization
+    - Poner la siguiente información:
+        Site Name: CGNOVA
+        Site description: (añadir una descripción)
+        (lo siguiente es opcional)
+        Enable Custom Branding: True
+        Custom Brand Image: select image # Elige una imagen de tu dispositivo para usar en el branding
+        Custom Brand text: (texto del branding)
+    - Guardar los cambios en SAVE
+
+## Configurar localization
+     Haz click en el cuadrado en la esquina superior izquierda (debajo de los 3 puntos)
+    - Selecciona: System Console
+    - En el menú izquierdo ve a: Site configuration > localization
+    - Poner la siguiente información:
+    Available Languages:    Englis (US) Español (Alpha)
+    Enable Experimental Locales:    True
+    - Guardar los cambios en SAVE
+
+> **Aclaración**: Esta configuración permite a los usuarios cambiar el idioma en el que verán el servicio de mattermos, de forma estandar la interfaz les aparecerá en ingles, si desea que de forma estandar el servicio aparezca en otro idioma, modifique la opción "Default Client Language" para el lenguaje de la interfaz de los usuarios que se creen una cuenta nueva o "Default Server Language" para cambiar el idioma de todas las cuentas
 
 ## Configurar Public Links
     - Haz click en el cuadrado en la esquina superior izquierda (debajo de los 3 puntos)
@@ -151,8 +183,11 @@
     - Selecciona: System Console
     - En el menú izquierdo ve a: Authentication > Password
     - Poner la siguiente información:
-        Minimum Password Length:
-        Password Requirements:
+        Minimum Password Length:    8
+        Password Requirements:  ☑ At least one lowercase letter
+                                ☑ At least one uppercase letter
+                                ☑ At least one symbol (e.g. "~!@#$%^&*()")
+        
         Maximum Login Attempts: 10
         Enable Forgot Password Link:    True
     - Guardar los cambios en SAVE
